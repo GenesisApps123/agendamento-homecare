@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendamento Home Care - Atendimento Domiciliar</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandBg: '#0cc0df',      /* Fundo Principal */
+                        brandAccent: '#00bf63',  /* Detalhes, Cards e Botões */
+                        brandProgress: '#ff3131',/* Barra de Progresso */
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0cc0df;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Estilização da barra de rolagem */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00bf63;
+            border-radius: 4px;
+        }
+
+        /* Estilos personalizados para os cards selecionados */
+        .service-card {
+            transition: all 0.25s ease-in-out;
+            background-color: rgba(0, 191, 99, 0.15);
+            border: 2px solid #00bf63;
+        }
+        .service-card.selected {
+            background-color: #00bf63;
+            color: #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+        .service-card.selected .card-icon {
+            color: #ffffff !important;
+        }
+        .service-card.selected .badge-price {
+            background-color: #ffffff;
+            color: #00bf63;
+        }
+
+        /* Card de pagamento selecionado */
+        .pay-card {
+            transition: all 0.2s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .pay-card.selected {
+            border-color: #00bf63;
+            background-color: #00bf63;
+            color: #ffffff;
+        }
+
+        /* Animações simples */
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased selection:bg-white selection:text-teal-600">
+
+    <!-- Header / Nav -->
+    <header class="w-full bg-black/10 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-[#00bf63] flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                    <i class="fa-solid fa-user-nurse"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight leading-none text-white">CuidarHome</h1>
+                    <span class="text-xs text-white/80 font-medium">Atendimento Domiciliar Especializado</span>
+                </div>
+            </div>
+            <a href="https://wa.me/5588981774617" target="_blank" class="hidden sm:flex items-center space-x-2 text-xs font-semibold bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg transition">
+                <i class="fa-brands fa-whatsapp text-emerald-300 text-base"></i>
+                <span>Suporte Directo</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto px-4 py-6 sm:py-10 flex-grow w-full">
+
+        <!-- Header da Página -->
+        <div class="text-center mb-8">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">Agendamento Online</h2>
+            <p class="text-white/90 text-sm sm:text-base max-w-xl mx-auto">
+                Monte o plano ideal de cuidados no conforto da sua casa. Selecione os serviços, datas e finalize diretamente pelo WhatsApp.
+            </p>
+        </div>
+
+        <!-- BARRA DE PROGRESSO DO ATENDIMENTO (#ff3131) -->
+        <div class="bg-black/20 p-4 sm:p-6 rounded-2xl border border-white/10 mb-8 backdrop-blur-sm shadow-xl">
+            <div class="flex justify-between items-center mb-2 text-xs sm:text-sm font-bold tracking-wide">
+                <span id="step-label" class="uppercase text-white">Etapa 1 de 4: Dados Pessoais</span>
+                <span id="step-percentage" class="text-white bg-[#ff3131] px-2.5 py-0.5 rounded-full text-xs">25%</span>
+            </div>
+            <!-- Progress Track -->
+            <div class="w-full bg-white/20 h-3 rounded-full overflow-hidden p-0.5">
+                <div id="progress-bar" class="bg-[#ff3131] h-full rounded-full transition-all duration-500 ease-out shadow-sm" style="width: 25%;"></div>
+            </div>
+            <!-- Etapas Indicadores -->
+            <div class="grid grid-cols-4 gap-2 mt-4 text-center text-[10px] sm:text-xs font-semibold">
+                <div id="ind-1" class="text-white font-bold underline">1. Dados</div>
+                <div id="ind-2" class="text-white/60">2. Serviços</div>
+                <div id="ind-3" class="text-white/60">3. Data & Dias</div>
+                <div id="ind-4" class="text-white/60">4. Pagamento</div>
+            </div>
+        </div>
+
+        <!-- FORMULÁRIO MULTI-ETAPAS -->
+        <form id="booking-form" onsubmit="return false;">
+
+            <!-- ETAPA 1: DADOS DO CLIENTE -->
+            <div id="step-1" class="step-content fade-in space-y-5">
+                <div class="bg-black/15 p-6 rounded-2xl border border-white/10 space-y-4">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2 border-b border-white/10 pb-3">
+                        <i class="fa-solid fa-address-card text-[#00bf63]"></i> Informações do Paciente / Responsável
+                    </h3>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-white">Nome Completo do Paciente/Responsável *</label>
+                        <input type="text" id="client-name" required placeholder="Ex: Maria José da Silva" 
+                            class="w-full px-4 py-3 rounded-xl bg-white/15 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#00bf63] focus:border-transparent">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-white">WhatsApp para Contato *</label>
+                            <input type="tel" id="client-phone" required placeholder="(88) 99999-9999" 
+                                class="w-full px-4 py-3 rounded-xl bg-white/15 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#00bf63] focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-white">Rua e Número *</label>
+                            <input type="text" id="client-street" required placeholder="Ex: Av. Principal, 123" 
+                                class="w-full px-4 py-3 rounded-xl bg-white/15 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#00bf63] focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-white">Bairro e Cidade *</label>
+                            <input type="text" id="client-neighborhood" required placeholder="Ex: Centro, Juazeiro do Norte" 
+                                class="w-full px-4 py-3 rounded-xl bg-white/15 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#00bf63] focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-white">Ponto de Referência / Complemento</label>
+                            <input type="text" id="client-reference" placeholder="Ex: Próximo à praça central / Apto 102" 
+                                class="w-full px-4 py-3 rounded-xl bg-white/15 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#00bf63] focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="button" onclick="nextStep(2)" class="w-full sm:w-auto bg-[#00bf63] hover:bg-emerald-600 text-white font-bold px-8 py-3.5 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                        <span>Avançar para Serviços</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ETAPA 2: ESCOLHA DOS SERVIÇOS -->
+            <div id="step-2" class="step-content hidden fade-in space-y-5">
+                <div class="bg-black/15 p-6 rounded-2xl border border-white/10">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 mb-4 gap-2">
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-stethoscope text-[#00bf63]"></i> Selecione os Serviços
+                        </h3>
+                        <span class="text-xs bg-white/20 px-3 py-1 rounded-full text-white font-medium self-start sm:self-auto">
+                            <i class="fa-solid fa-circle-info mr-1"></i> Você pode escolher mais de um
+                        </span>
+                    </div>
+
+                    <!-- Lista de Cards de Serviços -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="services-grid">
+
+                        <!-- Card 1 -->
+                        <div onclick="toggleService('enfermagem24h', 250)" id="card-enfermagem24h" class="service-card p-4 rounded-xl cursor-pointer flex flex-col justify-between relative">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-[#00bf63] card-icon text-xl">
+                                        <i class="fa-solid fa-user-nurse"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-base leading-tight">Enfermagem 24 Horas</h4>
+                                        <span class="text-xs opacity-90">Plantão contínuo e dedicado</span>
+                                    </div>
+                                </div>
+                                <span class="badge-price text-xs font-bold px-2.5 py-1 rounded-full bg-[#00bf63] text-white">R$ 250 / dia</span>
+                            </div>
+                            <p class="text-xs opacity-80 mt-2">
+                                Acompanhamento em tempo integral, administração rigorosa de medicações, monitoramento constante de sinais vitais e assistência completa ao paciente.
+                            </p>
+                        </div>
+
+                        <!-- Card 2 -->
+                        <div onclick="toggleService('curativos', 80)" id="card-curativos" class="service-card p-4 rounded-xl cursor-pointer flex flex-col justify-between relative">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-[#00bf63] card-icon text-xl">
+                                        <i class="fa-solid fa-bandage"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-base leading-tight">Curativos Especiais</h4>
+                                        <span class="text-xs opacity-90">Tratamento de lesões</span>
+                                    </div>
+                                </div>
+                                <span class="badge-price text-xs font-bold px-2.5 py-1 rounded-full bg-[#00bf63] text-white">R$ 80 / sessão</span>
+                            </div>
+                            <p class="text-xs opacity-80 mt-2">
+                                Avaliação, higienização asséptica e aplicação de coberturas de alta tecnologia para feridas cirúrgicas, úlceras por pressão e queimaduras.
+                            </p>
+                        </div>
+
+                        <!-- Card 3 -->
+                        <div onclick="toggleService('fisioterapia', 120)" id="card-fisioterapia" class="service-card p-4 rounded-xl cursor-pointer flex flex-col justify-between relative">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-[#00bf63] card-icon text-xl">
+                                        <i class="fa-solid fa-[#00bf63] fa-person-walking-with-cane"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-base leading-tight">Fisioterapia Motora/Resp.</h4>
+                                        <span class="text-xs opacity-90">Reabilitação no lar</span>
+                                    </div>
+                                </div>
+                                <span class="badge-price text-xs font-bold px-2.5 py-1 rounded-full bg-[#00bf63] text-white">R$ 120 / sessão</span>
+                            </div>
+                            <p class="text-xs opacity-80 mt-2">
+                                Exercícios para ganho de mobilidade, fortalecimento muscular, treino de marcha e reexpansão pulmonar para prevenção de complicações.
+                            </p>
+                        </div>
+
+                        <!-- Card 4 -->
+                        <div onclick="toggleService('medicamentos', 60)" id="card-medicamentos" class="service-card p-4 rounded-xl cursor-pointer flex flex-col justify-between relative">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-[#00bf63] card-icon text-xl">
+                                        <i class="fa-solid fa-syringe"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-base leading-tight">Aplicação de Injetáveis/Soro</h4>
+                                        <span class="text-xs opacity-90">Procedimento rápido</span>
+                                    </div>
+                                </div>
+                                <span class="badge-price text-xs font-bold px-2.5 py-1 rounded-full bg-[#00bf63] text-white">R$ 60 / visita</span>
+                            </div>
+                            <p class="text-xs opacity-80 mt-2">
+                                Aplicação de medicamentos intramusculares, endovenosos, subcutâneos ou hidratação venosa (soroterapia) sob prescrição médica.
+                            </p>
+                        </div>
+
+                        <!-- Card 5 -->
+                        <div onclick="toggleService('cuidador', 150)" id="card-cuidador" class="service-card p-4 rounded-xl cursor-pointer flex flex-col justify-between relative">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-[#00bf63] card-icon text-xl">
+                                        <i class="fa-solid fa-hands-holding-child"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-base leading-tight">Acompanhamento / Cuidador</h4>
+                                        <span class="text-xs opacity-90">Turno de 12 horas</span>
+                                    </div>
+                                </div>
+                                <span class="badge-price text-xs font-bold px-2.5 py-1 rounded-full bg-[#00bf63] text-white">R$ 150 / dia</span>
+                            </div>
+                            <p class="text-xs opacity-80 mt-2">
+                                Suporte nas atividades diárias, auxílio na higiene pessoal, alimentação, transferência, passeios e acompanhamento geral para idosos ou convalescentes.
+                            </p>
+                        </div>
+
+                        <!-- Card 6 -->
+                        <div onclick="toggleService('sinais_vitais', 45)" id="card-sinais_vitais" class="service-card p-4 rounded-xl cursor-pointer flex flex-col justify-between relative">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-[#00bf63] flex items-center justify-center text-white card-icon text-xl">
+                                        <i class="fa-solid fa-heart-pulse"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-base leading-tight">Medição de Sinais Vitais</h4>
+                                        <span class="text-xs opacity-90">Checagem de rotina</span>
+                                    </div>
+                                </div>
+                                <span class="badge-price text-xs font-bold px-2.5 py-1 rounded-full bg-[#00bf63] text-white">R$ 45 / visita</span>
+                            </div>
+                            <p class="text-xs opacity-80 mt-2">
+                                Aferição de pressão arterial, glicemia capilar (HGT), oximetria, temperatura e frequência cardíaca com relatório anotado.
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center gap-4">
+                    <button type="button" onclick="nextStep(1)" class="bg-white/20 hover:bg-white/30 text-white font-bold px-6 py-3 rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-left"></i> Voltar
+                    </button>
+                    <button type="button" onclick="nextStep(3)" class="bg-[#00bf63] hover:bg-emerald-600 text-white font-bold px-8 py-3 rounded-xl transition shadow-lg flex items-center gap-2">
+                        <span>Avançar para Datas</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ETAPA 3: DIA, HORA E DURAÇÃO -->
+            <div id="step-3" class="step-content hidden fade-in space-y-5">
+                <div class="bg-black/15 p-6 rounded-2xl border border-white/10 space-y-4">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2 border-b border-white/10 pb-3">
+                        <i class="fa-solid fa-calendar-days text-[#00bf63]"></i> Período e Horários do Atendimento
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-white">Data do Primeiro Atendimento *</label>
+                            <input type="date" id="service-date" required 
+                                class="w-full px-4 py-3 rounded-xl bg-white/15 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#00bf63] focus:border-transparent">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-white">Horário Preferencial *</label>
+                            <input type="time" id="service-time" required 
+                                class="w-full px-4 py-3 rounded-xl bg-white/15 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#00bf63] focus:border-transparent">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-white">Duração (Nº de Dias) *</label>
+                            <div class="flex items-center">
+                                <button type="button" onclick="adjustDays(-1)" class="bg-white/20 hover:bg-white/30 px-4 py-3 rounded-l-xl font-bold text-lg border border-r-0 border-white/20">-</button>
+                                <input type="number" id="service-days" min="1" value="1" readonly 
+                                    class="w-full text-center py-3 bg-white/15 border border-white/20 text-white font-bold text-lg focus:outline-none">
+                                <button type="button" onclick="adjustDays(1)" class="bg-white/20 hover:bg-white/30 px-4 py-3 rounded-r-xl font-bold text-lg border border-l-0 border-white/20">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#00bf63]/20 border border-[#00bf63] p-4 rounded-xl flex items-center gap-3">
+                        <i class="fa-solid fa-calculator text-[#00bf63] text-2xl"></i>
+                        <div class="text-xs sm:text-sm">
+                            <p class="font-semibold text-white">Cálculo em Tempo Real:</p>
+                            <p class="text-white/90">O valor total dos serviços escolhidos será multiplicado pela quantidade de dias selecionada (Ex: R$ 100/dia x 5 dias = R$ 500).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center gap-4">
+                    <button type="button" onclick="nextStep(2)" class="bg-white/20 hover:bg-white/30 text-white font-bold px-6 py-3 rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-left"></i> Voltar
+                    </button>
+                    <button type="button" onclick="nextStep(4)" class="bg-[#00bf63] hover:bg-emerald-600 text-white font-bold px-8 py-3 rounded-xl transition shadow-lg flex items-center gap-2">
+                        <span>Avançar para Pagamento</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ETAPA 4: PAGAMENTO E RESUMO DO PEDIDO -->
+            <div id="step-4" class="step-content hidden fade-in space-y-6">
+                
+                <!-- Opções de Pagamento -->
+                <div class="bg-black/15 p-6 rounded-2xl border border-white/10 space-y-4">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2 border-b border-white/10 pb-3">
+                        <i class="fa-solid fa-credit-card text-[#00bf63]"></i> Escolha a Forma de Pagamento
+                    </h3>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div onclick="selectPayment('Pix')" id="pay-Pix" class="pay-card p-3 rounded-xl cursor-pointer text-center font-semibold text-sm flex flex-col items-center justify-center gap-2 selected">
+                            <i class="fa-brands fa-pix text-2xl"></i>
+                            <span>Pix</span>
+                        </div>
+                        <div onclick="selectPayment('Cartão de Crédito')" id="pay-Cartão de Crédito" class="pay-card p-3 rounded-xl cursor-pointer text-center font-semibold text-sm flex flex-col items-center justify-center gap-2">
+                            <i class="fa-solid fa-credit-card text-2xl"></i>
+                            <span>Crédito</span>
+                        </div>
+                        <div onclick="selectPayment('Cartão de Débito')" id="pay-Cartão de Débito" class="pay-card p-3 rounded-xl cursor-pointer text-center font-semibold text-sm flex flex-col items-center justify-center gap-2">
+                            <i class="fa-solid fa-money-check-dollar text-2xl"></i>
+                            <span>Débito</span>
+                        </div>
+                        <div onclick="selectPayment('Dinheiro / Espécie')" id="pay-Dinheiro / Espécie" class="pay-card p-3 rounded-xl cursor-pointer text-center font-semibold text-sm flex flex-col items-center justify-center gap-2">
+                            <i class="fa-solid fa-money-bill-wave text-2xl"></i>
+                            <span>Dinheiro</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD DE RESUMO FINAL -->
+                <div class="bg-black/25 p-6 rounded-2xl border-2 border-[#00bf63] shadow-2xl space-y-4">
+                    <h3 class="text-xl font-extrabold text-white flex items-center justify-between border-b border-white/15 pb-3">
+                        <span><i class="fa-solid fa-receipt text-[#00bf63] mr-2"></i> Resumo do Agendamento</span>
+                        <span class="text-xs bg-[#00bf63] text-white px-3 py-1 rounded-full font-bold">Confirmação</span>
+                    </h3>
+
+                    <div id="summary-details" class="space-y-3 text-sm text-white/90">
+                        <!-- Conteúdo injetado via JS -->
+                    </div>
+
+                    <div class="border-t border-white/15 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+                        <span class="text-base font-bold text-white">VALOR TOTAL ESTIMADO:</span>
+                        <span id="summary-total-price" class="text-3xl font-extrabold text-[#00bf63] bg-white/10 px-4 py-1.5 rounded-xl border border-[#00bf63]">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center gap-4">
+                    <button type="button" onclick="nextStep(3)" class="bg-white/20 hover:bg-white/30 text-white font-bold px-6 py-3 rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-left"></i> Voltar
+                    </button>
+
+                    <!-- Botão Finalizar / WhatsApp -->
+                    <button type="button" onclick="finishBooking()" class="w-full sm:w-auto bg-[#00bf63] hover:bg-emerald-600 text-white text-lg font-extrabold px-8 py-4 rounded-xl transition shadow-2xl flex items-center justify-center gap-3 transform hover:scale-105">
+                        <i class="fa-brands fa-whatsapp text-2xl"></i>
+                        <span>Finalizar no WhatsApp</span>
+                    </button>
+                </div>
+            </div>
+
+        </form>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full bg-black/20 border-t border-white/10 py-6 mt-10">
+        <div class="max-w-4xl mx-auto px-4 text-center text-xs text-white/80 space-y-2">
+            <p>&copy; 2026 CuidarHome - Agendamento de Atendimento Domiciliar. Todos os direitos reservados.</p>
+            <p class="flex items-center justify-center gap-1">
+                <span>Atendimento presencial e suporte online via WhatsApp:</span>
+                <strong class="text-white font-bold">(88) 98177-4617</strong>
+            </p>
+        </div>
+    </footer>
+
+    <!-- LOGICA EM JAVASCRIPT -->
+    <script>
+        // Estrutura de dados dos serviços disponíveis
+        const servicesData = {
+            'enfermagem24h': { name: 'Enfermagem 24 Horas', price: 250 },
+            'curativos': { name: 'Curativos Especiais', price: 80 },
+            'fisioterapia': { name: 'Fisioterapia Motora/Respiratória', price: 120 },
+            'medicamentos': { name: 'Aplicação de Medicamentos/Soro', price: 60 },
+            'cuidador': { name: 'Acompanhamento / Cuidador', price: 150 },
+            'sinais_vitais': { name: 'Medição de Sinais Vitais', price: 45 }
+        };
+
+        // Estado do Agendamento
+        let selectedServices = [];
+        let selectedPaymentMethod = 'Pix';
+        let currentStep = 1;
+
+        // Inicializar a data de hoje por padrão
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('service-date').value = today;
+            document.getElementById('service-time').value = '08:00';
+        });
+
+        // Alternar seleção de serviço (Múltipla Seleção)
+        function toggleService(serviceId, price) {
+            const card = document.getElementById(`card-${serviceId}`);
+            const index = selectedServices.findIndex(s => s.id === serviceId);
+
+            if (index > -1) {
+                selectedServices.splice(index, 1);
+                card.classList.remove('selected');
+            } else {
+                selectedServices.push({ id: serviceId, price: price });
+                card.classList.add('selected');
+            }
+        }
+
+        // Alterar quantidade de dias
+        function adjustDays(delta) {
+            const input = document.getElementById('service-days');
+            let current = parseInt(input.value) || 1;
+            current += delta;
+            if (current < 1) current = 1;
+            input.value = current;
+        }
+
+        // Selecionar forma de pagamento
+        function selectPayment(method) {
+            selectedPaymentMethod = method;
+            document.querySelectorAll('.pay-card').forEach(card => card.classList.remove('selected'));
+            document.getElementById(`pay-${method}`).classList.add('selected');
+        }
+
+        // Troca de etapas do formulário e atualização da barra de progresso (#ff3131)
+        function nextStep(step) {
+            // Validações básicas por etapa
+            if (step === 2 && currentStep === 1) {
+                const name = document.getElementById('client-name').value.trim();
+                const phone = document.getElementById('client-phone').value.trim();
+                const street = document.getElementById('client-street').value.trim();
+                const neighborhood = document.getElementById('client-neighborhood').value.trim();
+
+                if (!name || !phone || !street || !neighborhood) {
+                    showCustomAlert('Por favor, preencha todos os campos obrigatórios (*).');
+                    return;
+                }
+            }
+
+            if (step === 3 && currentStep === 2) {
+                if (selectedServices.length === 0) {
+                    showCustomAlert('Selecione pelo menos um serviço para continuar.');
+                    return;
+                }
+            }
+
+            if (step === 4) {
+                updateSummary();
+            }
+
+            // Ocultar etapa atual
+            document.getElementById(`step-${currentStep}`).classList.add('hidden');
+            
+            // Mostrar próxima etapa
+            document.getElementById(`step-${step}`).classList.remove('hidden');
+            
+            currentStep = step;
+            updateProgressBar(step);
+            window.scrollTo({ top: 100, behavior: 'smooth' });
+        }
+
+        // Atualizar barra de progresso
+        function updateProgressBar(step) {
+            const percentage = step * 25;
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+            document.getElementById('step-percentage').innerText = `${percentage}%`;
+            document.getElementById('step-label').innerText = `Etapa ${step} de 4: ` + getStepTitle(step);
+
+            for (let i = 1; i <= 4; i++) {
+                const ind = document.getElementById(`ind-${i}`);
+                if (i <= step) {
+                    ind.className = 'text-white font-bold underline';
+                } else {
+                    ind.className = 'text-white/60';
+                }
+            }
+        }
+
+        function getStepTitle(step) {
+            switch(step) {
+                case 1: return 'Dados Pessoais';
+                case 2: return 'Serviços Desejados';
+                case 3: return 'Data e Duração';
+                case 4: return 'Pagamento e Resumo';
+                default: return '';
+            }
+        }
+
+        // Atualizar Card de Resumo antes da finalização
+        function updateSummary() {
+            const name = document.getElementById('client-name').value;
+            const phone = document.getElementById('client-phone').value;
+            const street = document.getElementById('client-street').value;
+            const neighborhood = document.getElementById('client-neighborhood').value;
+            const ref = document.getElementById('client-reference').value;
+
+            const dateVal = document.getElementById('service-date').value;
+            const timeVal = document.getElementById('service-time').value;
+            const daysVal = parseInt(document.getElementById('service-days').value) || 1;
+
+            // Formatar data para exibição (dd/mm/aaaa)
+            const dateParts = dateVal.split('-');
+            const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : dateVal;
+
+            let totalPerDay = 0;
+            let servicesListHtml = '<ul class="list-disc list-inside space-y-1 my-2 bg-white/10 p-3 rounded-lg">';
+
+            selectedServices.forEach(s => {
+                const data = servicesData[s.id];
+                totalPerDay += data.price;
+                servicesListHtml += `<li><strong>${data.name}</strong> - R$ ${data.price},00 / dia</li>`;
+            });
+            servicesListHtml += '</ul>';
+
+            const grandTotal = totalPerDay * daysVal;
+
+            const summaryContainer = document.getElementById('summary-details');
+            summaryContainer.innerHTML = `
+                <p><strong>Paciente/Responsável:</strong> ${name} (${phone})</p>
+                <p><strong>Endereço:</strong> ${street}, ${neighborhood} ${ref ? `(${ref})` : ''}</p>
+                <p class="mt-2"><strong>Serviços Selecionados:</strong></p>
+                ${servicesListHtml}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 bg-white/10 p-3 rounded-lg">
+                    <p><strong>Início:</strong> ${formattedDate} às ${timeVal}h</p>
+                    <p><strong>Duração Total:</strong> ${daysVal} dia(s)</p>
+                    <p><strong>Forma de Pagamento:</strong> ${selectedPaymentMethod}</p>
+                    <p><strong>Cálculo Diário:</strong> R$ ${totalPerDay},00 x ${daysVal} dia(s)</p>
+                </div>
+            `;
+
+            document.getElementById('summary-total-price').innerText = `R$ ${grandTotal.toFixed(2).replace('.', ',')}`;
+        }
+
+        // Finalizar agendamento e montar URL do WhatsApp
+        function finishBooking() {
+            const phoneDest = '5588981774617';
+
+            const name = document.getElementById('client-name').value;
+            const phone = document.getElementById('client-phone').value;
+            const street = document.getElementById('client-street').value;
+            const neighborhood = document.getElementById('client-neighborhood').value;
+            const ref = document.getElementById('client-reference').value;
+
+            const dateVal = document.getElementById('service-date').value;
+            const timeVal = document.getElementById('service-time').value;
+            const daysVal = parseInt(document.getElementById('service-days').value) || 1;
+
+            const dateParts = dateVal.split('-');
+            const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : dateVal;
+
+            let totalPerDay = 0;
+            let servicesText = '';
+
+            selectedServices.forEach(s => {
+                const data = servicesData[s.id];
+                totalPerDay += data.price;
+                servicesText += `  • ${data.name} (R$ ${data.price},00/dia)\n`;
+            });
+
+            const grandTotal = totalPerDay * daysVal;
+
+            // Formatação do Texto em Markdown do WhatsApp
+            let message = `🏥 *SOLICITAÇÃO DE AGENDAMENTO HOME CARE*\n\n`;
+            message += `👤 *DADOS DO PACIENTE/RESPONSÁVEL*\n`;
+            message += `• *Nome:* ${name}\n`;
+            message += `• *Contato:* ${phone}\n`;
+            message += `• *Endereço:* ${street}, ${neighborhood}\n`;
+            if (ref) message += `• *Ref/Comp:* ${ref}\n`;
+
+            message += `\n🩺 *SERVIÇOS SELECIONADOS:*\n${servicesText}`;
+
+            message += `\n📅 *PERÍODO E HORÁRIO*\n`;
+            message += `• *Data de Início:* ${formattedDate}\n`;
+            message += `• *Horário:* ${timeVal}\n`;
+            message += `• *Duração:* ${daysVal} dia(s)\n`;
+
+            message += `\n💳 *PAGAMENTO E VALORES*\n`;
+            message += `• *Forma de Pagamento:* ${selectedPaymentMethod}\n`;
+            message += `• *Cálculo:* R$ ${totalPerDay},00 x ${daysVal} dia(s)\n`;
+            message += `• *VALOR TOTAL ESTIMADO:* R$ ${grandTotal.toFixed(2).replace('.', ',')}\n\n`;
+            message += `_Olá! Gostaria de confirmar meu agendamento com os dados acima._`;
+
+            // Redirecionamento
+            const encodedText = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${phoneDest}?text=${encodedText}`;
+
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // Caixa de aviso personalizada (Evitando alert nativo)
+        function showCustomAlert(msg) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+            alertDiv.innerHTML = `
+                <div class="bg-[#00bf63] border border-white/20 text-white p-6 rounded-2xl max-w-sm w-full shadow-2xl text-center space-y-4 fade-in">
+                    <i class="fa-solid fa-triangle-exclamation text-4xl text-yellow-300"></i>
+                    <p class="font-semibold text-base">${msg}</p>
+                    <button onclick="this.parentElement.parentElement.remove()" class="w-full bg-white text-[#00bf63] font-bold py-2.5 rounded-xl hover:bg-gray-100 transition">
+                        Entendi
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(alertDiv);
+        }
+    </script>
+</body>
+</html>
